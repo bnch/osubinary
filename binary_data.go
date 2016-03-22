@@ -2,11 +2,12 @@
 package osubinary
 
 import (
-	"io"
-	"fmt"
 	"encoding/binary"
-	"github.com/bnch/uleb128"
 	"errors"
+	"fmt"
+	"io"
+
+	"github.com/bnch/uleb128"
 )
 
 // BinaryData is the data to export into various variables.
@@ -23,8 +24,8 @@ func New(r io.Reader) BinaryData {
 
 // Unmarshal decodes some BinaryData into various data structers passed as arguments.
 func (b BinaryData) Unmarshal(out ...interface{}) error {
-	for _, v := range out {
-		switch v := v.(type) {
+	for _, vOriginal := range out {
+		switch v := vOriginal.(type) {
 
 		case *string:
 			d, err := b.ReadString()
@@ -39,65 +40,20 @@ func (b BinaryData) Unmarshal(out ...interface{}) error {
 			}
 			*v = d
 
-		case *int8:
-			var finVal int8
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
+		case *[]int32:
+			var arrlen uint16
+			err := binary.Read(b.reader, binary.LittleEndian, &arrlen)
 			if err != nil {
 				return err
 			}
-			*v = finVal
-		case *uint8:
-			var finVal uint8
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
+			finalArr := make([]int32, arrlen)
+			for i := 0; i < int(arrlen); i++ {
+				err = binary.Read(b.reader, binary.LittleEndian, &finalArr[i])
+				if err != nil {
+					return err
+				}
 			}
-			*v = finVal
-
-		case *int16:
-			var finVal int16
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
-			}
-			*v = finVal
-		case *uint16:
-			var finVal uint16
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
-			}
-			*v = finVal
-
-		case *int32:
-			var finVal int32
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
-			}
-			*v = finVal
-		case *uint32:
-			var finVal uint32
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
-			}
-			*v = finVal
-
-		case *int64:
-			var finVal int64
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
-			}
-			*v = finVal
-		case *uint64:
-			var finVal uint64
-			err := binary.Read(b.reader, binary.LittleEndian, &finVal)
-			if err != nil {
-				return err
-			}
-			*v = finVal
+			*v = finalArr
 
 		case *[]uint32:
 			var arrlen uint16
@@ -114,20 +70,13 @@ func (b BinaryData) Unmarshal(out ...interface{}) error {
 			}
 			*v = finalArr
 
-		case *[]int32:
-			var arrlen uint16
-			err := binary.Read(b.reader, binary.LittleEndian, &arrlen)
+		case
+			*int8, *uint8, *int16, *uint16,
+			*int32, *uint32, *int64, *uint64:
+			err := binary.Read(b.reader, binary.LittleEndian, vOriginal)
 			if err != nil {
 				return err
 			}
-			finalArr := make([]int32, arrlen)
-			for i := 0; i < int(arrlen); i++ {
-				err = binary.Read(b.reader, binary.LittleEndian, &finalArr[i])
-				if err != nil {
-					return err
-				}
-			}
-			*v = finalArr
 
 		default:
 			return fmt.Errorf("osubinary.Unmarshal: type not supported (%T)", v)
