@@ -1,7 +1,6 @@
 package osubinary
 
 import (
-	"errors"
 	"fmt"
 	"io"
 
@@ -13,7 +12,7 @@ func ReadString(r io.Reader) ([]byte, error) {
 	bslice := make([]byte, 1)
 	r.Read(bslice)
 	if bslice[0] != 11 {
-		return []byte{}, errors.New("osubinary.ReadString: was expecting string, does not begin with byte 11")
+		return []byte{}, nil
 	}
 	strlen := uleb128.UnmarshalReader(r)
 	bslice = make([]byte, strlen)
